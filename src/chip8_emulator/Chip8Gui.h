@@ -18,7 +18,7 @@ namespace ch8
 
         ~Chip8Gui();
 
-        // Main loop, Chip8 frame rate is 60Hz
+        // Main loop to execute a ROM, Chip8 official frame rate is 60Hz
         void runROM(std::string_view romFilePath, int frameRate = 60);
 
     private:
@@ -29,9 +29,11 @@ namespace ch8
         SDL_Window *_window;
         SDL_Renderer *_renderer;
         SDL_Texture *_texture;
-        int _pitch;
         Chip8 _chip8;
         bool _isRunning = false;
+
+        // Length of a row of pixels (in bytes)
+        static constexpr int VideoPitch = sizeof(decltype(Chip8::_video)::value_type) * Chip8::VIDEO_WIDTH;
     };
 }
 

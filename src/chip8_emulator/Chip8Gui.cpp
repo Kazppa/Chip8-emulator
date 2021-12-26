@@ -5,19 +5,14 @@
 
 #include <SDL.h>
 
-namespace
-{
-    constexpr auto VIDEO_WIDTH = ch8::Chip8::VIDEO_WIDTH;
-    constexpr auto VIDEO_HEIGHT = ch8::Chip8::VIDEO_HEIGHT;
-}
 
 ch8::Chip8Gui::Chip8Gui(int videoScale)
 {
     _window = SDL_CreateWindow("CHIP-8 Emulator", 0, 0,
-                               VIDEO_WIDTH * videoScale, VIDEO_HEIGHT * videoScale, SDL_WINDOW_SHOWN);
+                               Chip8::VIDEO_WIDTH * videoScale, Chip8::VIDEO_HEIGHT * videoScale, SDL_WINDOW_SHOWN);
     _renderer = SDL_CreateRenderer(_window, -1, SDL_RENDERER_ACCELERATED);
     _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING,
-                                 VIDEO_WIDTH, VIDEO_HEIGHT);
+                                 Chip8::VIDEO_WIDTH, Chip8::VIDEO_HEIGHT);
 }
 
 ch8::Chip8Gui::~Chip8Gui()
@@ -29,7 +24,7 @@ ch8::Chip8Gui::~Chip8Gui()
 
 void ch8::Chip8Gui::render()
 {
-    SDL_UpdateTexture(_texture, nullptr, _chip8._video.data(), _pitch);
+    SDL_UpdateTexture(_texture, nullptr, _chip8._video.data(), VideoPitch);
     SDL_RenderClear(_renderer);
     SDL_RenderCopy(_renderer, _texture, nullptr, nullptr);
     SDL_RenderPresent(_renderer);
