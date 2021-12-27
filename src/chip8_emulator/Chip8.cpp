@@ -72,6 +72,18 @@ bool ch8::Chip8::loadROM(std::string_view filePath)
     return true;
 }
 
+void ch8::Chip8::reset() noexcept
+{
+    _registers.fill(0u);
+    _keypad.fill(0u);
+    _memory.fill(0u);
+    _video.fill(0u);
+    _stack.fill(0u);
+    _pc = MEMORY_START_ADDRESS;
+    _sp = 0u;
+    _delayTimer = 0u;
+    _soundTimer = 0u;
+}
 
 void ch8::Chip8::update()
 {
@@ -101,6 +113,15 @@ void ch8::Chip8::op_2nnn()
     ++_sp;
     _stack[_sp] = _pc;
     _pc = _opcode & 0x0FFFu;
+}
+
+void ch8::Chip8::op_3xkk()
+{
+    uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
+    uint8_t byte = _opcode & 0x00FFu;
+    if (_registers[Vx] == byte) {
+        _pc += 2;
+    }
 }
 
 #pragma endregion

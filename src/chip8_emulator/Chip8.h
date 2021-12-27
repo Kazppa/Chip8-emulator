@@ -11,7 +11,7 @@
 
 namespace ch8
 {
-    class Chip8
+    class Chip8 final
     {
     public:
         static constexpr int VIDEO_WIDTH = 64;
@@ -20,6 +20,9 @@ namespace ch8
         Chip8();
 
         bool loadROM(std::string_view filePath);
+
+        // Reset to default state (wipe memory, video, keypad, ...)
+        void reset() noexcept;
 
         // Execute 1 CPU cycle
         void update();
@@ -30,6 +33,7 @@ namespace ch8
         void op_00EE();     // RET - Return from subroutine
         void op_1nnn();     // JP addr - Jump to location nnn
         void op_2nnn();     // CALL addr - Call subroutine at nnn
+        void op_3xkk();     // SE Vx, Byte - Skip next instruction if Vx = kk
 
 #pragma endregion
 
@@ -44,7 +48,7 @@ namespace ch8
         uint16_t _pc{};                           // Program Counter (holds the address of the next instruction to execute
 
         std::array<uint16_t, 16> _stack{};
-        uint8_t _sp{};                            // Stack Pointer (top of the stack)
+        uint8_t _sp;                              // Stack Pointer (top of the stack)
 
         uint8_t _delayTimer{};                    // Simple timer
         uint8_t _soundTimer{};
