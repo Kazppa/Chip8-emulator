@@ -48,24 +48,14 @@ ch8::Chip8::Chip8() :
 bool ch8::Chip8::loadROM(std::string_view filePath)
 {
     // Open file as a stream binary and move the pointer to the end
-    std::ifstream file(filePath.data(), std::ios::binary | std::ios::ate);
+    std::ifstream file(filePath.data(), std::ios::binary);
     if (!file.is_open())
         return false;
 
-    // Allocate a buffer for the file content
-    const auto buffer_size = file.tellg();
-    if (buffer_size <= 0) {
-        return false;
-    }
-    std::vector<char> buffer;
-    buffer.reserve(buffer_size);
-
-    // Go back to the beginning of the file and fill the buffer
-    file.seekg(0, std::ios::beg);
-    file.read(buffer.data(), buffer_size);
-    file.close();
-
-    std::copy(buffer.cbegin(), buffer.cend(), _memory.begin() + MEMORY_START_ADDRESS);
+    // Load binary data in RAM
+    auto beginMemoryPtr = &_memory[MEMORY_START_ADDRESS];
+    file.read((char *) beginMemoryPtr,
+              std::distance(_memory.begin() + MEMORY_START_ADDRESS, _memory.end()));
     return true;
 }
 
@@ -258,7 +248,7 @@ void ch8::Chip8::op_9xy0()
 // Set I = nnn
 void ch8::Chip8::op_Annn()
 {
-    const uint8_t address = _opcode & 0b0000111111111111u;
+    const uint16_t address = _opcode & 0b0000111111111111u;
     _index = address;
 }
 
@@ -266,7 +256,7 @@ void ch8::Chip8::op_Annn()
 // The program counter is set to nnn plus the value of V0
 void ch8::Chip8::op_Rnnn()
 {
-    const uint8_t address = _opcode & 0b0000111111111111u;
+    const uint16_t address = _opcode & 0b0000111111111111u;
     _pc = address + _registers[0];
 }
 
@@ -275,7 +265,7 @@ void ch8::Chip8::op_Cxkk()
 {
     const auto Vx = (_opcode & 0b00001111'000000000u) >> 8u;
     const uint8_t byte = (_opcode & 0b00000000'11111111u);
-    _registers[Vx] = _randByte(_randByte) & byte;
+    _registers[Vx] = _randByte(_randomEngine) & byte;
 }
 
 // Display n-byte sprite starting at memory location I at (Vx, Vy)
@@ -290,7 +280,7 @@ void ch8::Chip8::op_Dxyn()
     const auto xPos = _registers[Vx] % VIDEO_WIDTH;
     const auto yPos = _registers[Vy] % VIDEO_HEIGHT;
 
-    _registers[0xF] = 0u;
+    _registers[0xF] = 0;
     for (auto row = 0u; row < nByte; ++row) {
         const auto spriteByte = _memory[_index + row];
 
@@ -306,6 +296,108 @@ void ch8::Chip8::op_Dxyn()
             // XOR with the sprite pixel
             screenPixel ^= 0b11111111'11111111u;
         }
+    }
+}
+
+// Skip next instruction if key with the value of Vx is pressed
+void ch8::Chip8::op_Ex9E()
+{
+    const auto Vx = (_opcode & 0b00001111'00000000u) >> 8u;
+    const auto key = _registers[Vx];
+    if (_keypad[key]) {
+        _pc += 2;
+    }
+}
+
+// Skip next instruction if key with the value of Vx is not pressed
+void ch8::Chip8::op_ExA1()
+{
+    const auto Vx = (_opcode & 0b00001111'00000000u) >> 8u;
+    const auto key = _registers[Vx];
+    if (!_keypad[key]) {
+        _pc += 2;
+    }
+}
+
+// Set Vx = delay timer value
+void ch8::Chip8::op_Fx07()
+{
+    const auto Vx = (_opcode & 0b00001111'00000000u) >> 8u;
+    _registers[Vx] = _delayTimer;
+}
+
+// Wait for a key press, store the value of the key in Vx
+void ch8::Chip8::op_Fx0A()
+{
+    for (auto i = 0u; i < _keypad.size(); ++i) {
+        if (_keypad[i]) {
+            const auto Vx = (_opcode & 0b00001111'00000000u) >> 8u;
+            _registers[Vx] = i;
+            return;
+        }
+        // The easiest way to “wait” is to decrement the PC by 2 whenever a keypad value is not detected
+        // This has the effect of running the same instruction repeatedly.
+        _pc -= 2;
+    }
+}
+
+// Set delay timer = Vx
+void ch8::Chip8::op_Fx15()
+{
+    const auto Vx = (_opcode & 0b00001111'00000000u) >> 8u;
+    _delayTimer = _registers[Vx];
+}
+
+// Set sound timer = Vx
+void ch8::Chip8::op_Fx18()
+{
+    const auto Vx = (_opcode & 0b00001111'00000000u) >> 8u;
+    _soundTimer = _registers[Vx];
+}
+
+// Set I = I + Vx
+void ch8::Chip8::op_Fx1E()
+{
+    const auto Vx = (_opcode & 0b00001111'00000000u) >> 8u;
+    _index += _registers[Vx];
+}
+
+// Set I = location of sprite for digit Vx
+void ch8::Chip8::op_Fx29()
+{
+    const auto Vx = (_opcode & 0b00001111'00000000u) >> 8u;
+    const uint8_t digit = _registers[Vx];
+    // Font is 5 bytes wide
+    _index = FONTSET_START_ADDRESS + (5 * digit);
+}
+
+// Store BCD representation of Vx in memory locations I, I+1, and I+2
+void ch8::Chip8::op_Fx33()
+{
+    const auto Vx = (_opcode & 0b00001111'00000000u) >> 8u;
+    auto value = _registers[Vx];
+    _memory[_index + 2] = value % 10;
+    value /= 10;
+    _memory[_index + 1] = value % 10;
+    value /= 10;
+    _memory[_index] = value % 10;
+}
+
+// Store registers V0 through Vx in memory starting at location I
+void ch8::Chip8::op_Fx55()
+{
+    const auto Vx = (_opcode & 0b00001111'00000000u) >> 8u;
+    for (auto i = 0u; i <= Vx; ++i) {
+        _memory[_index + i] = _registers[i];
+    }
+}
+
+// Read registers V0 through Vx from memory starting at location I
+void ch8::Chip8::op_Fx65()
+{
+    const auto Vx = (_opcode & 0b00001111'00000000u) >> 8u;
+    for (auto i = 0u; i <= Vx; ++i) {
+        _registers[i] = _memory[_index + i];
     }
 }
 

@@ -25,11 +25,9 @@ namespace ch8
             Key_1 = 1,
             Key_2 = 2,
             Key_3 = 3,
-            Key_q = 4,
             Key_e = 6,
             Key_s = 8,
             Key_d = 9,
-            Key_z = 10,
             Key_c = 11,
             Key_4 = 12,
             Key_r = 13,
@@ -84,6 +82,17 @@ namespace ch8
         void op_Rnnn();     // JP V0, addr
         void op_Cxkk();     // RND Vx, byte
         void op_Dxyn();     // DRW Vx, Vy, nibble
+        void op_Ex9E();     // SKP Vx
+        void op_ExA1();     // SKNP Vx
+        void op_Fx07();     // LD Vx, DT
+        void op_Fx0A();     // LD Vx, K
+        void op_Fx15();     // LD DT, Vx
+        void op_Fx18();     // Set sound timer = Vx
+        void op_Fx1E();     // ADD I, Vx
+        void op_Fx29();     // LD F, Vx
+        void op_Fx33();     // LD B, Vx
+        void op_Fx55();     // LD [I], Vx
+        void op_Fx65();     // LD Vx, [I]
 #pragma endregion
 
     private:
