@@ -14,8 +14,8 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
     const std::string_view romFilePath(argv[1]);
-    const auto videoScale = argc > 2 ? std::stoi(argv[2]) : 10;
-    const auto frameRate = argc > 3 ? std::stoi(argv[3]) : 60;
+    const auto videoScale = argc > 2 ? std::stoi(argv[2]) : ch8::Chip8Gui::DefaultScaleRatio;
+    const auto frameRate = argc > 3 ? std::stoi(argv[3]) : ch8::Chip8Gui::DefaultFrameRate;
 
     // Initialize SDL 2
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {

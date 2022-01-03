@@ -14,9 +14,11 @@ namespace ch8
     class Chip8Gui
     {
     public:
-        // Launch an emulator with a scale ratio (for modern screen with high resolution)
-        // Chip8 official frame rate is 60Hz
-        explicit Chip8Gui(int videoScale = 10, int frameRate = 60);
+        static constexpr int DefaultScaleRatio = 10;
+        static constexpr int DefaultFrameRate = 60; // Chip8 official frame rate is 60Hz
+
+        // Launch the emulator with a scale ratio (for modern screen with high resolution)
+        explicit Chip8Gui(int videoScale = DefaultScaleRatio, int frameRate = DefaultFrameRate);
 
         ~Chip8Gui();
 
@@ -32,7 +34,7 @@ namespace ch8
         SDL_Window *_window;
         SDL_Renderer *_renderer;
         SDL_Texture *_texture;
-        int _frameRate = 60;
+        int _frameRate;
         Chip8 _chip8;
         bool _isRunning = false;
 
