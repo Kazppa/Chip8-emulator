@@ -1,4 +1,4 @@
-#include "chip8_emulator//Chip8Gui.h"
+#include "chip8_emulator/Chip8Gui.h"
 
 #include <iostream>
 #include <SDL.h>
@@ -6,15 +6,16 @@
 
 int main(int argc, char *argv[])
 {
-    // Parse arguments
-    if (argc != 4) {
-        std::cerr << "Usage: " << argv[0] << " <Scale> <Frame Rate> <ROM file path>" << std::endl;
+    // Parsing arguments
+    if (argc < 2 || argc > 4) {
+        std::cerr << "Usage: " << argv[0] << "<ROM file path> "
+                                             "<Screen resolution scale (optional Default=10)> "
+                                             "<Frame Rate (optional Default=60)>" << std::endl;
         return EXIT_FAILURE;
     }
-
-    const auto videoScale = std::stoi(argv[1]);
-    const auto frameRate = std::stoi(argv[2]);
-    const std::string_view romFilePath = argv[3];
+    const std::string_view romFilePath(argv[1]);
+    const auto videoScale = argc > 2 ? std::stoi(argv[2]) : 10;
+    const auto frameRate = argc > 3 ? std::stoi(argv[3]) : 60;
 
     // Initialize SDL 2
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -22,9 +23,9 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    // Execute the ROM on the emulator
-    ch8::Chip8Gui emulator(videoScale);
-    emulator.runROM(romFilePath, frameRate);
+    // Load and execute the ROM into the emulator
+    ch8::Chip8Gui emulator(videoScale, frameRate);
+    emulator.runROM(romFilePath);
 
     SDL_Quit();
     return EXIT_SUCCESS;
