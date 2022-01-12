@@ -22,10 +22,6 @@ namespace ch8
 
         void render(std::uint32_t *pixels);
 
-        void show();
-
-        void hide();
-
         void processInput(std::array<uint8_t, 16>& keys, bool *quit);
 
         SDL_Window *_window;

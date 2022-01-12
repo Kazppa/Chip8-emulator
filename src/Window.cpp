@@ -15,7 +15,9 @@ namespace {
 Window::Window(int videoScale, int frameRate) : _frameRate(frameRate)
 {
     _window = SDL_CreateWindow("CHIP-8 Emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                               Chip8::VIDEO_WIDTH * videoScale, Chip8::VIDEO_HEIGHT * videoScale, SDL_WINDOW_SHOWN);
+                               Chip8::VIDEO_WIDTH * videoScale, Chip8::VIDEO_HEIGHT * videoScale,
+                               SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+
     _renderer = SDL_CreateRenderer(_window, -1, SDL_RENDERER_ACCELERATED);
     _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING,
                                  Chip8::VIDEO_WIDTH, Chip8::VIDEO_HEIGHT);

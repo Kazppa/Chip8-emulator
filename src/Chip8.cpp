@@ -1,8 +1,8 @@
 #include "chip8_emulator/Chip8.h"
 
 #include <fstream>
-#include <cassert>
 #include <iostream>
+#include <sstream>
 
 namespace ch8
 {
@@ -57,15 +57,18 @@ bool ch8::Chip8::loadROM(std::string_view filePath)
 
     // Get size of file and allocate a buffer to hold the contents
     std::streampos buffer_size = file.tellg();
-    std::vector<char> buffer;
-    buffer.resize(buffer_size);
+    // TODO std::vector
+    char *buffer = new char[buffer_size];
 
     // Go back to the beginning of the file and fill the buffer
     file.seekg(0, std::ios::beg);
-    file.read(buffer.data(), buffer_size);
+    file.read(buffer, buffer_size);
     file.close();
 
-    std::memcpy(reinterpret_cast<char *>(&*_memory.begin() + MEMORY_START_ADDRESS), buffer.data(), buffer_size);
+    for (long i = 0; i < buffer_size; ++i) {
+        _memory[MEMORY_START_ADDRESS + i] = buffer[i];
+    }
+    delete[] buffer;
     return true;
 }
 
@@ -99,23 +102,29 @@ void ch8::Chip8::execCpuCycle()
 
 void ch8::Chip8::debugOpcode() const
 {
-    const uint16_t x = (_opcode & 0x0F00) >> 8;  // second 4 bits e.g. 0xA(B)CD
-    const uint16_t y = (_opcode & 0x00F0) >> 4;  // third 4 bits e.g. 0xAB(C)D
-    const uint16_t kk = _opcode & 0x00FF;        // lower byte e.g. 0xAB(CD)
-    const uint16_t n = _opcode & 0x000F;         // last 4 bits e.g. 0xABC(D)
+    std::stringstream ss;
+    ss << std::hex << _opcode;
+    const auto opcodeHex = ss.str();
     std::cout << _opcode;
 }
 
 void ch8::Chip8::execCurrentInstruction()
 {
     const auto opcodeFirstChar = (_opcode & 0xF000u) >> 12u;
+    std::stringstream ss;
+    ss << std::hex << _opcode;
+    const auto opcodeHex = ss.str();
+
     switch (opcodeFirstChar) {
         case 0x0: {
             switch (_opcode & 0x000Fu) {
-                case 0x0: op_00E0(); break;
-                case 0xE: op_00EE(); break;
+                case 0x0: op_00E0();
+                    break;
+                case 0xE: op_00EE();
+                    break;
 
-                default: debugOpcode(); break;
+                default: debugOpcode();
+                    break;
             }
             break;
         }
@@ -154,7 +163,8 @@ void ch8::Chip8::execCurrentInstruction()
                 case 0xE: op_8xyE();
                     break;
 
-                default: debugOpcode(); break;
+                default: debugOpcode();
+                    break;
             }
             break;
         }
@@ -174,29 +184,43 @@ void ch8::Chip8::execCurrentInstruction()
                     break;
                 case 0xE: op_Ex9E();
                     break;
+
+                default: debugOpcode();
+                    break;
             }
-            debugOpcode();
             break;
         }
         case 0xF: {
             switch (_opcode & 0x000Fu) {
-                case 0x3: op_Fx33(); break;
+                case 0x3: op_Fx33();
+                    break;
                 case 0x5: {
                     switch ((_opcode & 0xF0u) >> 4) {
-                        case 0x1: op_Fx15(); break;
-                        case 0x5: op_Fx55(); break;
-                        case 0x6: op_Fx65(); break;
+                        case 0x1: op_Fx15();
+                            break;
+                        case 0x5: op_Fx55();
+                            break;
+                        case 0x6: op_Fx65();
+                            break;
+                        default: debugOpcode();
+                            break;
                     }
-                    debugOpcode();
                     break;
                 }
-                case 0x7: op_Fx07(); break;
-                case 0x8: op_Fx18(); break;
-                case 0x9: op_Fx29(); break;
-                case 0xA: op_Fx0A(); break;
-                case 0xE: op_Fx1E(); break;
+                case 0x7: op_Fx07();
+                    break;
+                case 0x8: op_Fx18();
+                    break;
+                case 0x9: op_Fx29();
+                    break;
+                case 0xA: op_Fx0A();
+                    break;
+                case 0xE: op_Fx1E();
+                    break;
+
+                default: debugOpcode();
+                    break;
             }
-            debugOpcode();
             break;
         }
 
@@ -406,28 +430,31 @@ void ch8::Chip8::op_Dxyn()
 {
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     const uint8_t Vy = (_opcode & 0x00F0u) >> 4u;
-    const auto nByte = (_opcode & 0x000Fu);
+    const uint8_t height = _opcode & 0x000Fu;
 
-    // If coordinates are outside of the screen, wrap around to the opposite side of the screen
-    const auto xPos = _registers[Vx] % VIDEO_WIDTH;
-    const auto yPos = _registers[Vy] % VIDEO_HEIGHT;
+    // Wrap if going beyond screen boundaries
+    const uint8_t xPos = _registers[Vx] % VIDEO_WIDTH;
+    const uint8_t yPos = _registers[Vy] % VIDEO_HEIGHT;
 
     _registers[0xF] = 0;
 
-    for (auto row = 0u; row < nByte; ++row) {
-        const auto spriteByte = _memory[_index + row];
+    for (unsigned int row = 0; row < height; ++row) {
+        const uint8_t spriteByte = _memory[_index + row];
 
-        for (auto col = 0u; col < 8u; ++col) {
+        for (unsigned int col = 0; col < 8; ++col) {
             const uint8_t spritePixel = spriteByte & (0x80u >> col);
-            auto &screenPixel = _video[(yPos + row) * VIDEO_WIDTH + (xPos + col)];
+            uint32_t * screenPixel = &_video[(yPos + row) * VIDEO_WIDTH + (xPos + col)];
+
+            // Sprite pixel is on
             if (spritePixel) {
-                if (screenPixel == 0xFFFFFFFF) {
-                    // Screen pixel already ON, collision
+                // Screen pixel also on - collision
+                if (*screenPixel == 0xFFFFFFFF) {
                     _registers[0xF] = 1;
                 }
+
+                // Effectively XOR with the sprite pixel
+                *screenPixel ^= 0xFFFFFFFF;
             }
-            // XOR with the sprite pixel
-            screenPixel ^= 0xFFFFFFFF;
         }
     }
 }

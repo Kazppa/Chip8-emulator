@@ -110,7 +110,7 @@ namespace ch8
         uint16_t _pc{};                           // Program Counter (holds the address of the next instruction to execute
 
         std::array<uint16_t, 16> _stack{};
-        uint8_t _sp;                              // Stack Pointer (top of the stack)
+        uint8_t _sp{};                            // Stack Pointer (top of the stack)
 
         uint8_t _delayTimer{};                    // Simple timer
         uint8_t _soundTimer{};
