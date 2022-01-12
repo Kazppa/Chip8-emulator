@@ -14,7 +14,7 @@ void mainLoop(ch8::Chip8 &chip8, ch8::Window &window)
     auto lastCycleTime = std::chrono::high_resolution_clock::now();
     bool quit = false;
     while (!quit) {
-        window.processInput(chip8._keypad, &quit);
+        window.processInput(chip8._keypad, quit);
 
         const auto currentTime = std::chrono::high_resolution_clock::now();
         const float timeDelta = std::chrono::duration<float,
@@ -30,8 +30,8 @@ void mainLoop(ch8::Chip8 &chip8, ch8::Window &window)
         // Emulate 1 CPU cycle
         chip8.execCpuCycle();
 
-        if (chip8._renderFlag) {
-            chip8._renderFlag = false;
+        if (chip8.renderRequired()) {
+            chip8.setRenderRequired(false);
             window.render(chip8._video.data());
         }
     }

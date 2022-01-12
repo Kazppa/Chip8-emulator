@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <limits>
 
 namespace ch8
 {
@@ -38,7 +39,7 @@ ch8::Chip8::Chip8() :
         // Static seed in Debug mode
         _randomEngine(0),
 #else
-        // In release, set a random Seed
+        // Random seed in release mode
         _randomEngine(std::random_device().operator()()),
 #endif
         _randByte(0u, std::numeric_limits<uint8_t>::max())
@@ -51,20 +52,24 @@ bool ch8::Chip8::loadROM(std::string_view filePath)
 {
     // Open the file as a stream of binary and move the file pointer to the end
     std::ifstream file(filePath.data(), std::ios::binary | std::ios::ate);
-
-    if (!file.is_open())
+    if (!file.is_open()) {
         return false;
+    }
+    // Get file's size and allocate a buffer to hold the contents
+    const std::streamsize buffer_size = file.tellg();
+    if (buffer_size == 0 || buffer_size > std::numeric_limits<unsigned int>::max()) {
+        std::cerr << "Invalid size (or file is too big) at location \"" << filePath << '"';
+        return false;
+    }
 
-    // Get size of file and allocate a buffer to hold the contents
-    std::streampos buffer_size = file.tellg();
     std::vector<char> buffer;
     buffer.reserve(buffer_size);
-
     // Go back to the beginning of the file and fill the buffer
     file.seekg(0, std::ios::beg);
     file.read(buffer.data(), buffer_size);
     file.close();
 
+    // Load buffer into memory
     std::memcpy(_memory.data() + MEMORY_START_ADDRESS, buffer.data(), buffer_size);
     return true;
 }
@@ -72,7 +77,7 @@ bool ch8::Chip8::loadROM(std::string_view filePath)
 // Wipe all memory
 void ch8::Chip8::resetState() noexcept
 {
-    std::fill(_memory.begin() + MEMORY_START_ADDRESS, _memory.end(), uint8_t(0u));
+    std::fill(_memory.begin() + MEMORY_START_ADDRESS, _memory.end(), uint8_t(0));
     _registers.fill(0u);
     _keypad.fill(0u);
     _video.fill(0u);
@@ -85,11 +90,21 @@ void ch8::Chip8::resetState() noexcept
     _renderFlag = false;
 }
 
+std::string ch8::Chip8::opcodeToString() const
+{
+    std::stringstream ss;
+    ss << std::hex << _opcode;
+    auto opcodeHex = ss.str();
+    return opcodeHex;
+}
+
 void ch8::Chip8::execCpuCycle()
 {
+    // Opcode stored in 2 consecutive bytes
     _opcode = (_memory[_pc] << 8) | _memory[_pc + 1];
     _pc += 2;
 
+    // run the current CPU instruction stored in _opcode
     execCurrentInstruction();
 
     if (_delayTimer > 0u) {
@@ -97,15 +112,8 @@ void ch8::Chip8::execCpuCycle()
     }
     if (_soundTimer > 0u) {
         --_soundTimer;
+        // TODO request SDL buzzer
     }
-}
-
-void ch8::Chip8::debugOpcode() const
-{
-    std::stringstream ss;
-    ss << std::hex << _opcode;
-    const auto opcodeHex = ss.str();
-    std::cout << _opcode;
 }
 
 void ch8::Chip8::execCurrentInstruction()
@@ -114,114 +122,153 @@ void ch8::Chip8::execCurrentInstruction()
     switch (opcodeFirstChar) {
         case 0x0: {
             switch (_opcode & 0x000Fu) {
-                case 0x0: op_00E0();
+                case 0x0:
+                    op_00E0();
                     break;
-                case 0xE: op_00EE();
+                case 0xE:
+                    op_00EE();
                     break;
 
-                default: debugOpcode();
+                default:
+                    assert(false);
                     break;
             }
             break;
         }
-        case 0x1: op_1nnn();
+        case 0x1:
+            op_1nnn();
             break;
-        case 0x2: op_2nnn();
+        case 0x2:
+            op_2nnn();
             break;
-        case 0x3: op_3xkk();
+        case 0x3:
+            op_3xkk();
             break;
-        case 0x4: op_4xkk();
+        case 0x4:
+            op_4xkk();
             break;
-        case 0x5: op_5xy0();
+        case 0x5:
+            op_5xy0();
             break;
-        case 0x6: op_6xkk();
+        case 0x6:
+            op_6xkk();
             break;
-        case 0x7: op_7xkk();
+        case 0x7:
+            op_7xkk();
             break;
         case 0x8: {
             switch (_opcode & 0x000Fu) {
-                case 0x0: op_8xy0();
+                case 0x0:
+                    op_8xy0();
                     break;
-                case 0x1: op_8xy1();
+                case 0x1:
+                    op_8xy1();
                     break;
-                case 0x2: op_8xy2();
+                case 0x2:
+                    op_8xy2();
                     break;
-                case 0x3: op_8xy3();
+                case 0x3:
+                    op_8xy3();
                     break;
-                case 0x4: op_8xy4();
+                case 0x4:
+                    op_8xy4();
                     break;
-                case 0x5: op_8xy5();
+                case 0x5:
+                    op_8xy5();
                     break;
-                case 0x6: op_8xy6();
+                case 0x6:
+                    op_8xy6();
                     break;
-                case 0x7: op_8xy7();
+                case 0x7:
+                    op_8xy7();
                     break;
-                case 0xE: op_8xyE();
+                case 0xE:
+                    op_8xyE();
                     break;
 
-                default: debugOpcode();
+                default:
+                    assert(false);
                     break;
             }
             break;
         }
-        case 0x9: op_9xy0();
+        case 0x9:
+            op_9xy0();
             break;
-        case 0xA: op_Annn();
+        case 0xA:
+            op_Annn();
             break;
-        case 0xB: op_Bnnn();
+        case 0xB:
+            op_Bnnn();
             break;
-        case 0xC: op_Cxkk();
+        case 0xC:
+            op_Cxkk();
             break;
-        case 0xD: op_Dxyn();
+        case 0xD:
+            op_Dxyn();
             break;
         case 0xE: {
             switch (_opcode & 0x000Fu) {
-                case 0x1: op_ExA1();
+                case 0x1:
+                    op_ExA1();
                     break;
-                case 0xE: op_Ex9E();
+                case 0xE:
+                    op_Ex9E();
                     break;
 
-                default: debugOpcode();
+                default:
+                    assert(false);
                     break;
             }
             break;
         }
         case 0xF: {
             switch (_opcode & 0x000Fu) {
-                case 0x3: op_Fx33();
+                case 0x3:
+                    op_Fx33();
                     break;
                 case 0x5: {
                     switch ((_opcode & 0x00F0u) >> 4) {
-                        case 0x1: op_Fx15();
+                        case 0x1:
+                            op_Fx15();
                             break;
-                        case 0x5: op_Fx55();
+                        case 0x5:
+                            op_Fx55();
                             break;
-                        case 0x6: op_Fx65();
+                        case 0x6:
+                            op_Fx65();
                             break;
-                        default: debugOpcode();
+                        default:
+                            assert(false);
                             break;
                     }
                     break;
                 }
-                case 0x7: op_Fx07();
+                case 0x7:
+                    op_Fx07();
                     break;
-                case 0x8: op_Fx18();
+                case 0x8:
+                    op_Fx18();
                     break;
-                case 0x9: op_Fx29();
+                case 0x9:
+                    op_Fx29();
                     break;
-                case 0xA: op_Fx0A();
+                case 0xA:
+                    op_Fx0A();
                     break;
-                case 0xE: op_Fx1E();
+                case 0xE:
+                    op_Fx1E();
                     break;
 
-                default: debugOpcode();
+                default:
+                    assert(false);
                     break;
             }
             break;
         }
 
         default: {
-            debugOpcode();
+            assert(false);
             break;
         }
     }
@@ -441,7 +488,7 @@ void ch8::Chip8::op_Dxyn()
 
         for (unsigned int col = 0; col < 8; ++col) {
             const uint8_t spritePixel = spriteByte & (0x80u >> col);
-            uint32_t& screenPixel = _video[(yPos + row) * VIDEO_WIDTH + (xPos + col)];
+            uint32_t &screenPixel = _video[(yPos + row) * VIDEO_WIDTH + (xPos + col)];
 
             if (!spritePixel) {
                 // Sprite pixel is off

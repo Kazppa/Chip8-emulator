@@ -7,9 +7,8 @@
 using ch8::Window;
 
 namespace {
-    // Length of a row of pixels (in bytes)
-    constexpr int VideoPitch = sizeof(decltype(ch8::Chip8::_video)::value_type) *
-            ch8::Chip8::VIDEO_WIDTH;
+    // Length of a row of pixels (in bytes) -> size of a pixel multiplied by the number of pixels per row
+    constexpr int VideoPitch = sizeof(decltype(ch8::Chip8::_video)::value_type) * ch8::Chip8::VIDEO_WIDTH;
 }
 
 Window::Window(int videoScale, int frameRate) : _frameRate(frameRate)
@@ -38,7 +37,7 @@ void Window::render(std::uint32_t *pixels)
     SDL_RenderPresent(_renderer);
 }
 
-void Window::processInput(std::array<uint8_t, 16> &keys, bool *quit)
+void Window::processInput(std::array<uint8_t, 16> &keys, bool &quit)
 {
     // Map the current sdl input with the chip-8's associated key index
     constexpr auto sdlKeyMapper = [](SDL_Keycode sdlCode) -> Chip8::Key {
@@ -81,13 +80,13 @@ void Window::processInput(std::array<uint8_t, 16> &keys, bool *quit)
         }
     };
 
-    *quit = false;
+    quit = false;
     SDL_Event sdlEvent;
     while(SDL_PollEvent(&sdlEvent)) {
         switch (sdlEvent.type) {
             case SDL_QUIT:
                 // Stop program
-                *quit = true;
+                quit = true;
                 break;
 
             case SDL_KEYDOWN: {
@@ -96,7 +95,7 @@ void Window::processInput(std::array<uint8_t, 16> &keys, bool *quit)
                         keyIndex != Chip8::Key_INVALID) {
                         keys[keyIndex] = 1u;
                 } else if (sdlKey == SDLK_ESCAPE) {
-                    *quit = true;
+                    quit = true;
                 }
                 break;
             }

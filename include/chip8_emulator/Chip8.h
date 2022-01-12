@@ -40,7 +40,7 @@ namespace ch8
             Key_w = 10,
             Key_z = 5,
 #else
-            // Qwerty bindings
+        // Qwerty bindings
             Key_q = 4,
             Key_a = 7,
             Key_w = 5,
@@ -49,6 +49,13 @@ namespace ch8
         };
 
         Chip8();
+
+        [[nodiscard]] bool renderRequired() const noexcept {return _renderFlag; }
+
+        void setRenderRequired(bool required) noexcept { _renderFlag = required; }
+
+        // Return the current opcode as string (Hexadecimal format)
+        [[nodiscard]] std::string opcodeToString() const;
 
         bool loadROM(std::string_view filePath);
 
@@ -59,6 +66,7 @@ namespace ch8
         void execCpuCycle();
 
 #pragma region OPCODES
+
         void op_00E0();     // CLS
         void op_00EE();     // RET
         void op_1nnn();     // JP addr
@@ -93,32 +101,31 @@ namespace ch8
         void op_Fx33();     // LD B, Vx
         void op_Fx55();     // LD [I], Vx
         void op_Fx65();     // LD Vx, [I]
+
 #pragma endregion
-
     private:
-        void debugOpcode() const;
-
         void execCurrentInstruction();
 
-        std::default_random_engine _randomEngine;
-        std::uniform_int_distribution<uint16_t> _randByte;  // Generate random value between 0 and 255
-
     public:
-        std::array<uint8_t, 16> _registers{};     // 16 registers
-        std::array<uint8_t, 4096> _memory{};      // 4k of RAM
-        uint16_t _index{};                        // special register used to store memory addresses for use in operations
-        uint16_t _pc{};                           // Program Counter (holds the address of the next instruction to execute
+        std::array<uint8_t, 16> _registers{};                       // 16 registers
+        std::array<uint8_t, 4096> _memory{};                        // 4k of RAM
+        uint16_t _index{};                                          // special register used to store memory addresses for use in operations
+        uint16_t _pc{};                                             // Program Counter (holds the address of the next instruction to execute
 
         std::array<uint16_t, 16> _stack{};
-        uint8_t _sp{};                            // Stack Pointer (top of the stack)
+        uint8_t _sp{};                                              // Stack Pointer (top of the stack)
 
-        uint8_t _delayTimer{};                    // Simple timer
+        uint8_t _delayTimer{};                                      // Simple timer
         uint8_t _soundTimer{};
 
-        std::array<uint8_t, 16> _keypad{};        // Represents each keyboard key (pressed or not pressed)
-        std::array<uint32_t, VIDEO_WIDTH * VIDEO_HEIGHT> _video{};   // Display memory, uint32 for SDL compliance
-        uint16_t _opcode;   // current opcode
-        bool _renderFlag = false;
+        std::array<uint8_t, 16> _keypad{};                          // Represents each keyboard key (pressed or not pressed)
+        std::array<uint32_t, VIDEO_WIDTH * VIDEO_HEIGHT> _video{};  // Display memory, uint32 for SDL compliance
+        uint16_t _opcode {};                                        // current opcode
+
+    private:
+        std::default_random_engine _randomEngine;
+        std::uniform_int_distribution<uint16_t> _randByte;          // Generate random value between 0 and 255
+        bool _renderFlag = false;                                   // Indicate when the UI need to be rendered (when modification happened to _video)
     };
 }
 

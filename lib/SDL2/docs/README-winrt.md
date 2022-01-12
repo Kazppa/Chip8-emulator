@@ -536,7 +536,7 @@ the SDL project file.  If you still get the error dialog, try using the Output
 window, again, seeing what Visual Studio says about it.
 
 
-#### GameWindow controllers / joysticks aren't working!
+#### Game controllers / joysticks aren't working!
 
 Windows only permits certain game controllers and joysticks to work within
 WinRT / UWP apps.  Even if a game controller or joystick works in a Win32
