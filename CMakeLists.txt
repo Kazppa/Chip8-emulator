@@ -39,3 +39,9 @@ target_compile_definitions(${CHIP8_EXE} PRIVATE
         $<$<CONFIG:Debug>:
         DEBUG
         >)
+
+add_custom_command(
+        TARGET ${CHIP8_EXE} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        "${CMAKE_CURRENT_SOURCE_DIR}/lib/SDL2/lib/x64/SDL2.dll"
+        "${CMAKE_CURRENT_BINARY_DIR}/")

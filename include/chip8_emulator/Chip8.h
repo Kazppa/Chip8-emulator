@@ -56,7 +56,7 @@ namespace ch8
         void reset() noexcept;
 
         // Execute 1 CPU cycle
-        void update();
+        void execCpuCycle();
 
 #pragma region OPCODES
         void op_00E0();     // CLS
@@ -79,7 +79,7 @@ namespace ch8
         void op_8xyE();     // SHL Vx
         void op_9xy0();     // SNE Vx, Vy
         void op_Annn();     // LD I, addr
-        void op_Rnnn();     // JP V0, addr
+        void op_Bnnn();     // JP V0, addr
         void op_Cxkk();     // RND Vx, byte
         void op_Dxyn();     // DRW Vx, Vy, nibble
         void op_Ex9E();     // SKP Vx
@@ -96,6 +96,10 @@ namespace ch8
 #pragma endregion
 
     private:
+        void debugOpcode() const;
+
+        void execCurrentInstruction();
+
         std::default_random_engine _randomEngine;
         std::uniform_int_distribution<uint16_t> _randByte;  // Generate random value between 0 and 255
 
