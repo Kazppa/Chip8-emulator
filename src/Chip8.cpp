@@ -57,30 +57,29 @@ bool ch8::Chip8::loadROM(std::string_view filePath)
 
     // Get size of file and allocate a buffer to hold the contents
     std::streampos buffer_size = file.tellg();
-    // TODO std::vector
-    char *buffer = new char[buffer_size];
+    std::vector<char> buffer;
+    buffer.reserve(buffer_size);
 
     // Go back to the beginning of the file and fill the buffer
     file.seekg(0, std::ios::beg);
-    file.read(buffer, buffer_size);
+    file.read(buffer.data(), buffer_size);
     file.close();
 
-    for (long i = 0; i < buffer_size; ++i) {
-        _memory[MEMORY_START_ADDRESS + i] = buffer[i];
-    }
-    delete[] buffer;
+    std::memcpy(_memory.data() + MEMORY_START_ADDRESS, buffer.data(), buffer_size);
     return true;
 }
 
-void ch8::Chip8::reset() noexcept
+// Wipe all memory
+void ch8::Chip8::resetState() noexcept
 {
     std::fill(_memory.begin() + MEMORY_START_ADDRESS, _memory.end(), uint8_t(0u));
     _registers.fill(0u);
     _keypad.fill(0u);
     _video.fill(0u);
     _stack.fill(0u);
-    _pc = MEMORY_START_ADDRESS;
     _sp = 0u;
+    _pc = MEMORY_START_ADDRESS;
+    _index = 0u;
     _delayTimer = 0u;
     _soundTimer = 0u;
 }
@@ -111,10 +110,6 @@ void ch8::Chip8::debugOpcode() const
 void ch8::Chip8::execCurrentInstruction()
 {
     const auto opcodeFirstChar = (_opcode & 0xF000u) >> 12u;
-    std::stringstream ss;
-    ss << std::hex << _opcode;
-    const auto opcodeHex = ss.str();
-
     switch (opcodeFirstChar) {
         case 0x0: {
             switch (_opcode & 0x000Fu) {
@@ -195,7 +190,7 @@ void ch8::Chip8::execCurrentInstruction()
                 case 0x3: op_Fx33();
                     break;
                 case 0x5: {
-                    switch ((_opcode & 0xF0u) >> 4) {
+                    switch ((_opcode & 0x00F0u) >> 4) {
                         case 0x1: op_Fx15();
                             break;
                         case 0x5: op_Fx55();

@@ -53,7 +53,7 @@ namespace ch8
         bool loadROM(std::string_view filePath);
 
         // Reset to default state (clear screen, memory, keypad, ...)
-        void reset() noexcept;
+        void resetState() noexcept;
 
         // Execute 1 CPU cycle
         void execCpuCycle();

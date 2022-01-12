@@ -16,7 +16,7 @@ void mainLoop(ch8::Chip8 &chip8, ch8::Window &window)
         window.processInput(chip8._keypad, &quit);
 
         const auto currentTime = std::chrono::high_resolution_clock::now();
-        const auto timeDelta = std::chrono::duration<float,
+        const float timeDelta = std::chrono::duration<float,
                 std::chrono::milliseconds::period>(currentTime - lastCycleTime).count();
 
         if (timeDelta > frameRatePerSec) {
