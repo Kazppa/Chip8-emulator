@@ -82,6 +82,7 @@ void ch8::Chip8::resetState() noexcept
     _index = 0u;
     _delayTimer = 0u;
     _soundTimer = 0u;
+    _renderFlag = false;
 }
 
 void ch8::Chip8::execCpuCycle()
@@ -232,6 +233,7 @@ void ch8::Chip8::execCurrentInstruction()
 void ch8::Chip8::op_00E0()
 {
     _video.fill(0);
+    _renderFlag = true;
 }
 
 // Return from subroutine
@@ -423,6 +425,7 @@ void ch8::Chip8::op_Cxkk()
 // Set VF = collision
 void ch8::Chip8::op_Dxyn()
 {
+    _renderFlag = true;
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     const uint8_t Vy = (_opcode & 0x00F0u) >> 4u;
     const uint8_t height = _opcode & 0x000Fu;
@@ -438,18 +441,19 @@ void ch8::Chip8::op_Dxyn()
 
         for (unsigned int col = 0; col < 8; ++col) {
             const uint8_t spritePixel = spriteByte & (0x80u >> col);
-            uint32_t * screenPixel = &_video[(yPos + row) * VIDEO_WIDTH + (xPos + col)];
+            uint32_t& screenPixel = _video[(yPos + row) * VIDEO_WIDTH + (xPos + col)];
 
-            // Sprite pixel is on
-            if (spritePixel) {
-                // Screen pixel also on - collision
-                if (*screenPixel == 0xFFFFFFFF) {
-                    _registers[0xF] = 1;
-                }
-
-                // Effectively XOR with the sprite pixel
-                *screenPixel ^= 0xFFFFFFFF;
+            if (!spritePixel) {
+                // Sprite pixel is off
+                continue;
             }
+
+            if (screenPixel == 0xFFFFFFFFu) {
+                // Screen pixel also on - notify collision
+                _registers[0xF] = 1;
+            }
+            // Effectively XOR with the sprite pixel
+            screenPixel ^= 0xFFFFFFFFu;
         }
     }
 }

@@ -8,7 +8,8 @@
 // Execute the current ROM loaded in the chip8 emulator
 void mainLoop(ch8::Chip8 &chip8, ch8::Window &window)
 {
-    const float frameRatePerSec = static_cast<float>(window._frameRate) / 60.0f;
+    // const float frameDelay = static_cast<float>(window._frameRate) / 60.0f;
+     const float frameDelay = 1.0f;
 
     auto lastCycleTime = std::chrono::high_resolution_clock::now();
     bool quit = false;
@@ -19,12 +20,18 @@ void mainLoop(ch8::Chip8 &chip8, ch8::Window &window)
         const float timeDelta = std::chrono::duration<float,
                 std::chrono::milliseconds::period>(currentTime - lastCycleTime).count();
 
-        if (timeDelta > frameRatePerSec) {
-            lastCycleTime = currentTime;
+        if (timeDelta <= frameDelay) {
+            continue;
+        }
 
-            // Emulate 1 CPU cycle
-            chip8.execCpuCycle();
+        // next CPU cycle
+        lastCycleTime = currentTime;
 
+        // Emulate 1 CPU cycle
+        chip8.execCpuCycle();
+
+        if (chip8._renderFlag) {
+            chip8._renderFlag = false;
             window.render(chip8._video.data());
         }
     }

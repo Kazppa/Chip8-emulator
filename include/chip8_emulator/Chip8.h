@@ -118,6 +118,7 @@ namespace ch8
         std::array<uint8_t, 16> _keypad{};        // Represents each keyboard key (pressed or not pressed)
         std::array<uint32_t, VIDEO_WIDTH * VIDEO_HEIGHT> _video{};   // Display memory, uint32 for SDL compliance
         uint16_t _opcode;   // current opcode
+        bool _renderFlag = false;
     };
 }
 
