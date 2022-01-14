@@ -8,5 +8,5 @@
 ## To run a ROM file
 
 ```sh
-chip-8_emulator.exe 10 60 "../../ROMs/test_opcode.ch8"
+chip-8_emulator.exe "../../ROMs/pong.ch8"
 ```

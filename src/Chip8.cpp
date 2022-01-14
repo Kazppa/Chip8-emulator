@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <limits>
+#include <cassert>
 
 namespace ch8
 {
@@ -53,6 +54,7 @@ bool ch8::Chip8::loadROM(std::string_view filePath)
     // Open the file as a stream of binary and move the file pointer to the end
     std::ifstream file(filePath.data(), std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
+        std::cerr << "Failed to read ROM file at location \"" << filePath << '"';
         return false;
     }
     // Get file's size and allocate a buffer to hold the contents

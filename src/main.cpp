@@ -1,42 +1,41 @@
 #include "chip8_emulator/Chip8.h"
 #include "chip8_emulator/Window.hpp"
+#include "chip8_emulator/rom_handler.h"
 
 #include <iostream>
+#include <format>
 #include <SDL.h>
-#include <chrono>
 
-// Execute the current ROM loaded in the chip8 emulator
-void mainLoop(ch8::Chip8 &chip8, ch8::Window &window)
+
+// Return -1 if invalid value
+int parsePositiveInteger(std::string_view arg)
 {
-    // const float frameDelay = static_cast<float>(window._frameRate) / 60.0f;
-     const float frameDelay = 1.0f;
+    int output;
+    const auto result = std::from_chars(arg.data(), arg.data() + arg.size(), output);
 
-    auto lastCycleTime = std::chrono::high_resolution_clock::now();
-    bool quit = false;
-    while (!quit) {
-        window.processInput(chip8._keypad, quit);
+    if (result.ec != std::errc{}) {
+        // Conversion failed
+        output = -1;
 
-        const auto currentTime = std::chrono::high_resolution_clock::now();
-        const float timeDelta = std::chrono::duration<float,
-                std::chrono::milliseconds::period>(currentTime - lastCycleTime).count();
-
-        if (timeDelta <= frameDelay) {
-            continue;
+        if (result.ec == std::errc::invalid_argument) {
+            std::cerr << std::format("non integer argument \"{}\"", arg);
         }
-
-        // next CPU cycle
-        lastCycleTime = currentTime;
-
-        // Emulate 1 CPU cycle
-        chip8.execCpuCycle();
-
-        if (chip8.renderRequired()) {
-            chip8.setRenderRequired(false);
-            window.render(chip8._video.data());
+        else if (result.ec == std::errc::result_out_of_range) {
+            std::cerr << std::format("value out of range for argument \"{}\"", arg);
+        }
+        else {
+            // Any other errors
+            std::cerr << std::format("invalid value for argument \"{}\"", arg);
         }
     }
+    else {
+        if (output < 0) {
+            output = -1;
+            std::cerr << std::format("invalid negative value \"{}\"", arg);
+        }
+    }
+    return output;
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -48,23 +47,26 @@ int main(int argc, char *argv[])
 
     // Parsing arguments
     if (argc < 2 || argc > 4) {
-        std::cerr << "Usage: " << argv[0] << " <ROM file path>"
-                                             " <Screen resolution scale (Optional Default=10)>"
-                                             " <Frame Rate (Optional Default=60)>" << std::endl;
+        std::cerr << std::format("Usage: {} <ROM file path>"
+                                 " <Screen resolution scale (Optional Default={})>"
+                                 " <Frame Rate (Optional Default={})>",
+                                 argv[0], ch8::Window::DefaultScaleRatio, ch8::Window::DefaultFrameRate);
         return EXIT_FAILURE;
     }
     const std::string_view romFilePath(argv[1]);
-    const auto videoScale = argc > 2 ? std::stoi(argv[2]) : ch8::Window::DefaultScaleRatio;
-    const auto frameRate = argc > 3 ? std::stoi(argv[3]) : ch8::Window::DefaultFrameRate;
+    const auto videoScale = argc > 2 ? parsePositiveInteger(argv[2]) : ch8::Window::DefaultScaleRatio;
+    const auto frameRate = argc > 3 ? parsePositiveInteger(argv[3]) : ch8::Window::DefaultFrameRate;
+    if (videoScale == -1 || frameRate == -1) {
+        return EXIT_FAILURE;
+    }
 
     // Load and execute the ROM into the emulator
     ch8::Chip8 chip8Emulator;
     if (!chip8Emulator.loadROM(romFilePath)) {
-        SDL_Log("Failed to load the given ROM at location \"%s\"", romFilePath.data());
         return EXIT_FAILURE;
     }
     ch8::Window window(videoScale, frameRate);
-    mainLoop(chip8Emulator, window);
+    ch8::runMainLoop(chip8Emulator, window);
 
     SDL_Quit();
     return EXIT_SUCCESS;

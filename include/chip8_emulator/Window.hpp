@@ -13,7 +13,7 @@ namespace ch8
     class Window
     {
     public:
-        static constexpr auto DefaultScaleRatio = 10;
+        static constexpr auto DefaultScaleRatio = 20;
         static constexpr auto DefaultFrameRate = 60;   // Chip8 official frame rate is 60Hz
 
         explicit Window(int videoScale = DefaultScaleRatio, int frameRate = DefaultFrameRate);
