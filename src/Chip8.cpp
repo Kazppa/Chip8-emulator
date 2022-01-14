@@ -1,5 +1,7 @@
 #include "chip8_emulator/Chip8.h"
 
+#include <chip8_emulator/utils.h>
+
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -13,7 +15,7 @@ namespace ch8
 
     constexpr unsigned int FONTSET_START_ADDRESS = 0x50;
 
-    constexpr std::array<uint8_t, 80> FONTSET{
+    constexpr auto FONTSET = ch8::make_array<uint8_t>(
             0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
             0x20, 0x60, 0x20, 0x20, 0x70, // 1
             0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -30,19 +32,21 @@ namespace ch8
             0xE0, 0x90, 0x90, 0x90, 0xE0, // D
             0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
             0xF0, 0x80, 0xF0, 0x80, 0x80  // F
-    };
+    );
 }
+
+#ifdef DEBUG
+    // Static seed in Debug
+#define SEED() 0
+#else
+    // Random seed in Release
+#define SEED() std::random_device{}()
+#endif
 
 
 ch8::Chip8::Chip8() :
         _pc(MEMORY_START_ADDRESS),
-#ifdef DEBUG
-        // Static seed in Debug mode
-        _randomEngine(0),
-#else
-        // Random seed in release mode
-        _randomEngine(std::random_device().operator()()),
-#endif
+        _randomEngine(SEED()),
         _randByte(0u, std::numeric_limits<uint8_t>::max())
 {
     // Load Fonts in memory
@@ -82,7 +86,7 @@ void ch8::Chip8::resetState() noexcept
     std::fill(_memory.begin() + MEMORY_START_ADDRESS, _memory.end(), uint8_t(0));
     _registers.fill(0u);
     _keypad.fill(0u);
-    _video.fill(0u);
+    _video.fill(1u);
     _stack.fill(0u);
     _sp = 0u;
     _pc = MEMORY_START_ADDRESS;
@@ -105,6 +109,10 @@ void ch8::Chip8::execCpuCycle()
     // Opcode stored in 2 consecutive bytes
     _opcode = (_memory[_pc] << 8) | _memory[_pc + 1];
     _pc += 2;
+
+#ifdef DEBUG
+    _opcodeStr = opcodeToString();
+#endif
 
     // run the current CPU instruction stored in _opcode
     execCurrentInstruction();

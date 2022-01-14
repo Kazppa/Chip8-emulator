@@ -6,20 +6,24 @@
 
 using ch8::Window;
 
-namespace {
+namespace
+{
     // Length of a row of pixels (in bytes) -> size of a pixel multiplied by the number of pixels per row
     constexpr int VideoPitch = sizeof(decltype(ch8::Chip8::_video)::value_type) * ch8::Chip8::VIDEO_WIDTH;
 }
 
-Window::Window(int videoScale, int frameRate) : _frameRate(frameRate)
+Window::Window(int videoScale, int frequency) : _frequency(frequency)
 {
     _window = SDL_CreateWindow("CHIP-8 Emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                Chip8::VIDEO_WIDTH * videoScale, Chip8::VIDEO_HEIGHT * videoScale,
-                               SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+                               SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE);
 
     _renderer = SDL_CreateRenderer(_window, -1, SDL_RENDERER_ACCELERATED);
     _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING,
                                  Chip8::VIDEO_WIDTH, Chip8::VIDEO_HEIGHT);
+
+    // Show the window after the render creation to prevent the initial white screen
+    SDL_ShowWindow(_window);
 }
 
 Window::~Window()
@@ -82,7 +86,7 @@ void Window::processInput(std::array<uint8_t, 16> &keys, bool &quit)
 
     quit = false;
     SDL_Event sdlEvent;
-    while(SDL_PollEvent(&sdlEvent)) {
+    while (SDL_PollEvent(&sdlEvent)) {
         switch (sdlEvent.type) {
             case SDL_QUIT:
                 // Stop program
@@ -93,8 +97,9 @@ void Window::processInput(std::array<uint8_t, 16> &keys, bool &quit)
                 const auto sdlKey = sdlEvent.key.keysym.sym;
                 if (const auto keyIndex = sdlKeyMapper(sdlKey);
                         keyIndex != Chip8::Key_INVALID) {
-                        keys[keyIndex] = 1u;
-                } else if (sdlKey == SDLK_ESCAPE) {
+                    keys[keyIndex] = 1u;
+                }
+                else if (sdlKey == SDLK_ESCAPE) {
                     quit = true;
                 }
                 break;

@@ -5,8 +5,6 @@
 #include <cstdint>
 #include <random>
 
-#define CHIP8_Azerty
-
 
 namespace ch8
 {
@@ -33,14 +31,13 @@ namespace ch8
             Key_r = 13,
             Key_f = 14,
             Key_v = 15,
-
-#ifdef CHIP8_Azerty
+#ifdef QWERTY
             Key_q = 7,
             Key_a = 4,
             Key_w = 10,
             Key_z = 5,
 #else
-        // Qwerty bindings
+        // AZERTY bindings
             Key_q = 4,
             Key_a = 7,
             Key_w = 5,
@@ -65,8 +62,7 @@ namespace ch8
         // Execute 1 CPU cycle
         void execCpuCycle();
 
-#pragma region OPCODES
-
+#pragma region OPCODES methods
         void op_00E0();     // CLS
         void op_00EE();     // RET
         void op_1nnn();     // JP addr
@@ -101,8 +97,8 @@ namespace ch8
         void op_Fx33();     // LD B, Vx
         void op_Fx55();     // LD [I], Vx
         void op_Fx65();     // LD Vx, [I]
-
 #pragma endregion
+
     private:
         void execCurrentInstruction();
 
@@ -121,10 +117,13 @@ namespace ch8
         std::array<uint8_t, 16> _keypad{};                          // Represents each keyboard key (pressed or not pressed)
         std::array<uint32_t, VIDEO_WIDTH * VIDEO_HEIGHT> _video{};  // Display memory, uint32 for SDL compliance
         uint16_t _opcode {};                                        // current opcode
-
+#ifdef DEBUG
+        std::string _opcodeStr {};
+#endif
     private:
         std::default_random_engine _randomEngine;
         std::uniform_int_distribution<uint16_t> _randByte;          // Generate random value between 0 and 255
+
         bool _renderFlag = false;                                   // Indicate when the UI need to be rendered (when modification happened to _video)
     };
 }

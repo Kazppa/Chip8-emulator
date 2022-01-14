@@ -14,20 +14,20 @@ namespace ch8
     {
     public:
         static constexpr auto DefaultScaleRatio = 20;
-        static constexpr auto DefaultFrameRate = 60;   // Chip8 official frame rate is 60Hz
+        static constexpr auto DefaultFrequency = 500; // in Hertz
 
-        explicit Window(int videoScale = DefaultScaleRatio, int frameRate = DefaultFrameRate);
+        explicit Window(int videoScale = DefaultScaleRatio, int frequency = DefaultFrequency);
 
         ~Window();
 
         void render(std::uint32_t *pixels);
 
-        void processInput(std::array<uint8_t, 16>& keys, bool &quit);
+        void processInput(std::array<uint8_t, 16> &keys, bool &quit);
 
         SDL_Window *_window;
         SDL_Renderer *_renderer;
         SDL_Texture *_texture;
-        int _frameRate;
+        int _frequency;
     };
 }
 

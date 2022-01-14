@@ -8,6 +8,7 @@ namespace ch8
     class Chip8;
     class Window;
 
+    // Execute the current ROM loaded in the chip8 emulator
     void runMainLoop(Chip8 &chip8, Window& window);
 }
 

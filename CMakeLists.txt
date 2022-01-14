@@ -34,7 +34,7 @@ add_custom_command(TARGET ${CHIP8_EXE} POST_BUILD
 # Compile options
 if (MSVC)
     target_compile_options(${CHIP8_EXE} PRIVATE
-            "/W4" "/WX" "$<$<CONFIG:RELEASE>:/O2>")
+            /W4 "$<$<CONFIG:RELEASE>:/O2 /WX>")
 else ()
     target_compile_options(${CHIP8_EXE} PRIVATE
             "-Wall" "-Wextra" "-Werror" "$<$<CONFIG:Release>:-03>")

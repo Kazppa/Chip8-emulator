@@ -48,15 +48,15 @@ int main(int argc, char *argv[])
     // Parsing arguments
     if (argc < 2 || argc > 4) {
         std::cerr << std::format("Usage: {} <ROM file path>"
-                                 " <Screen resolution scale (Optional Default={})>"
-                                 " <Frame Rate (Optional Default={})>",
-                                 argv[0], ch8::Window::DefaultScaleRatio, ch8::Window::DefaultFrameRate);
+                                 " <Screen resolution upscale ratio (Optional Default={})>"
+                                 " <Interpreter frequency in Hertz (Optional Default={} Hz)>",
+                                 argv[0], ch8::Window::DefaultScaleRatio, ch8::Window::DefaultFrequency);
         return EXIT_FAILURE;
     }
     const std::string_view romFilePath(argv[1]);
     const auto videoScale = argc > 2 ? parsePositiveInteger(argv[2]) : ch8::Window::DefaultScaleRatio;
-    const auto frameRate = argc > 3 ? parsePositiveInteger(argv[3]) : ch8::Window::DefaultFrameRate;
-    if (videoScale == -1 || frameRate == -1) {
+    const auto frequency = argc > 3 ? parsePositiveInteger(argv[3]) : ch8::Window::DefaultFrequency;
+    if (videoScale == -1 || frequency == -1) {
         return EXIT_FAILURE;
     }
 
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     if (!chip8Emulator.loadROM(romFilePath)) {
         return EXIT_FAILURE;
     }
-    ch8::Window window(videoScale, frameRate);
+    ch8::Window window(videoScale, frequency);
     ch8::runMainLoop(chip8Emulator, window);
 
     SDL_Quit();
