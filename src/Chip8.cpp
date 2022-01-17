@@ -36,10 +36,10 @@ namespace ch8
 }
 
 #ifdef DEBUG
-    // Static seed in Debug
+// Static seed in Debug
 #define SEED() 0
 #else
-    // Random seed in Release
+// Random seed in Release
 #define SEED() std::random_device{}()
 #endif
 
@@ -108,7 +108,6 @@ void ch8::Chip8::execCpuCycle()
 {
     // Opcode stored in 2 consecutive bytes
     _opcode = (_memory[_pc] << 8) | _memory[_pc + 1];
-    _pc += 2;
 
 #ifdef DEBUG
     _opcodeStr = opcodeToString();
@@ -233,43 +232,34 @@ void ch8::Chip8::execCurrentInstruction()
             break;
         }
         case 0xF: {
-            switch (_opcode & 0x000Fu) {
-                case 0x3:
-                    op_Fx33();
-                    break;
-                case 0x5: {
-                    switch ((_opcode & 0x00F0u) >> 4) {
-                        case 0x1:
-                            op_Fx15();
-                            break;
-                        case 0x5:
-                            op_Fx55();
-                            break;
-                        case 0x6:
-                            op_Fx65();
-                            break;
-                        default:
-                            assert(false);
-                            break;
-                    }
-                    break;
-                }
-                case 0x7:
+            switch (_opcode & 0x00FFu) {
+                case 0x07:
                     op_Fx07();
                     break;
-                case 0x8:
-                    op_Fx18();
-                    break;
-                case 0x9:
-                    op_Fx29();
-                    break;
-                case 0xA:
+                case 0x0A:
                     op_Fx0A();
                     break;
-                case 0xE:
+                case 0x15:
+                    op_Fx15();
+                    break;
+                case 0x18:
+                    op_Fx18();
+                    break;
+                case 0x1E:
                     op_Fx1E();
                     break;
-
+                case 0x29:
+                    op_Fx29();
+                    break;
+                case 0x33:
+                    op_Fx33();
+                    break;
+                case 0x55:
+                    op_Fx55();
+                    break;
+                case 0x65:
+                    op_Fx65();
+                    break;
                 default:
                     assert(false);
                     break;
@@ -291,6 +281,7 @@ void ch8::Chip8::op_00E0()
 {
     _video.fill(0);
     _renderFlag = true;
+    _pc += 2;
 }
 
 // Return from subroutine
@@ -298,6 +289,7 @@ void ch8::Chip8::op_00EE()
 {
     --_sp;
     _pc = _stack[_sp];
+    _pc += 2;
 }
 
 // Jump to location nnn
@@ -322,8 +314,10 @@ void ch8::Chip8::op_3xkk()
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     const uint8_t byte = _opcode & 0x00FFu;
     if (_registers[Vx] == byte) {
+        // Skip next instruction
         _pc += 2;
     }
+    _pc += 2;
 }
 
 // Skip next instruction if Vx != kk
@@ -334,6 +328,7 @@ void ch8::Chip8::op_4xkk()
     if (_registers[Vx] != byte) {
         _pc += 2;
     }
+    _pc += 2;
 }
 
 // Skip next instruction if Vx == Vy
@@ -344,6 +339,7 @@ void ch8::Chip8::op_5xy0()
     if (_registers[Vx] == _registers[Vy]) {
         _pc += 2;
     }
+    _pc += 2;
 }
 
 // Set Vx = kk
@@ -352,6 +348,7 @@ void ch8::Chip8::op_6xkk()
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     const uint8_t byte = _opcode & 0x00FFu;
     _registers[Vx] = byte;
+    _pc += 2;
 }
 
 // Set Vx = Vx + kk
@@ -360,6 +357,7 @@ void ch8::Chip8::op_7xkk()
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     const uint8_t byte = _opcode & 0x00FFu;
     _registers[Vx] += byte;
+    _pc += 2;
 }
 
 // Stores the value of register Vy in register Vx
@@ -368,14 +366,16 @@ void ch8::Chip8::op_8xy0()
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     const uint8_t Vy = (_opcode & 0x00F0u) >> 4u;
     _registers[Vx] = _registers[Vy];
+    _pc += 2;
 }
 
 // Performs a bitwise OR on the values of Vx and Vy, then stores the result in Vx
 void ch8::Chip8::op_8xy1()
 {
-    const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
-    const uint8_t Vy = (_opcode & 0x00F0u) >> 4u;
-    _registers[Vx] |= Vy;
+    const uint8_t Vx = (_opcode & 0x0F00) >> 8u;
+    const uint8_t Vy = (_opcode & 0x00F0) >> 4u;
+    _registers[Vx] |= _registers[Vy];
+    _pc += 2;
 }
 
 // Performs a bitwise AND on the values of Vx and Vy, then stores the result in Vx
@@ -383,7 +383,8 @@ void ch8::Chip8::op_8xy2()
 {
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     const uint8_t Vy = (_opcode & 0x00F0u) >> 4u;
-    _registers[Vx] &= Vy;
+    _registers[Vx] &= _registers[Vy];
+    _pc += 2;
 }
 
 // Performs a bitwise exclusive OR on the values of Vx and Vy, then stores the result in Vx
@@ -391,7 +392,8 @@ void ch8::Chip8::op_8xy3()
 {
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     const uint8_t Vy = (_opcode & 0x00F0u) >> 4u;
-    _registers[Vx] ^= Vy;
+    _registers[Vx] ^= _registers[Vy];
+    _pc += 2;
 }
 
 // The values of Vx and Vy are added together
@@ -404,6 +406,7 @@ void ch8::Chip8::op_8xy4()
     const auto sum = _registers[Vx] + _registers[Vy];
     _registers[0xF] = sum > 255u ? 1 : 0;
     _registers[Vx] = sum & 0xFFu;
+    _pc += 2;
 }
 
 // If Vx > Vy, then VF is set to 1, otherwise 0
@@ -414,6 +417,7 @@ void ch8::Chip8::op_8xy5()
     const uint8_t Vy = (_opcode & 0x00F0u) >> 4u;
     _registers[0xF] = _registers[Vx] > _registers[Vy] ? 1 : 0;
     _registers[Vx] -= _registers[Vy];
+    _pc += 2;
 }
 
 // If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0
@@ -423,6 +427,7 @@ void ch8::Chip8::op_8xy6()
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     _registers[0xF] = (_registers[Vx] & 0x1u);
     _registers[Vx] >>= 1;
+    _pc += 2;
 }
 
 // If Vy > Vx, then VF is set to 1, otherwise 0
@@ -433,6 +438,7 @@ void ch8::Chip8::op_8xy7()
     const uint8_t Vy = (_opcode & 0x00F0u) >> 4u;
     _registers[0xF] = _registers[Vy] > _registers[Vx] ? 1 : 0;
     _registers[Vx] = _registers[Vy] - _registers[Vx];
+    _pc += 2;
 }
 
 // If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0
@@ -442,7 +448,7 @@ void ch8::Chip8::op_8xyE()
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     _registers[0xF] = (_registers[Vx] & 0x80u) >> 7u;
     _registers[Vx] <<= 1;
-
+    _pc += 2;
 }
 
 // Skip next instruction if Vx != Vy
@@ -450,6 +456,7 @@ void ch8::Chip8::op_9xy0()
 {
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     const uint8_t Vy = (_opcode & 0x00F0u) >> 4u;
+    _pc += 2;
     if (_registers[Vx] != _registers[Vy]) {
         _pc += 2;
     }
@@ -460,6 +467,7 @@ void ch8::Chip8::op_Annn()
 {
     const uint16_t address = _opcode & 0x0FFFu;
     _index = address;
+    _pc += 2;
 }
 
 // Jump to location nnn + V0
@@ -468,6 +476,7 @@ void ch8::Chip8::op_Bnnn()
 {
     const uint16_t address = _opcode & 0x0FFFu;
     _pc = address + _registers[0];
+    _pc += 2;
 }
 
 // Set Vx = random byte AND kk
@@ -476,13 +485,13 @@ void ch8::Chip8::op_Cxkk()
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     const uint8_t byte = (_opcode & 0x00FFu);
     _registers[Vx] = _randByte(_randomEngine) & byte;
+    _pc += 2;
 }
 
 // Display n-byte sprite starting at memory location I at (Vx, Vy)
 // Set VF = collision
 void ch8::Chip8::op_Dxyn()
 {
-    _renderFlag = true;
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     const uint8_t Vy = (_opcode & 0x00F0u) >> 4u;
     const uint8_t height = _opcode & 0x000Fu;
@@ -513,6 +522,8 @@ void ch8::Chip8::op_Dxyn()
             screenPixel ^= 0xFFFFFFFFu;
         }
     }
+    _renderFlag = true;
+    _pc += 2;
 }
 
 // Skip next instruction if key with the value of Vx is pressed
@@ -520,7 +531,8 @@ void ch8::Chip8::op_Ex9E()
 {
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     const uint8_t key = _registers[Vx];
-    if (_keypad[key]) {
+    _pc += 2;
+    if (_keypad[key] != 0u) {
         _pc += 2;
     }
 }
@@ -530,7 +542,8 @@ void ch8::Chip8::op_ExA1()
 {
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     const uint8_t key = _registers[Vx];
-    if (!_keypad[key]) {
+    _pc += 2;
+    if (_keypad[key] == 0u) {
         _pc += 2;
     }
 }
@@ -540,21 +553,26 @@ void ch8::Chip8::op_Fx07()
 {
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     _registers[Vx] = _delayTimer;
+    _pc += 2;
 }
 
 // Wait for a key press, store the value of the key in Vx
 void ch8::Chip8::op_Fx0A()
 {
+    bool keyPressed = false;
     const auto size = (uint8_t) _keypad.size();
     for (uint8_t i = 0u; i < size; ++i) {
         if (_keypad[i]) {
             const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
             _registers[Vx] = i;
-            return;
+            keyPressed = true;
         }
-        // The easiest way to “wait” is to decrement the PC by 2 whenever a keypad value is not detected
-        // This has the effect of running the same instruction repeatedly.
-        _pc -= 2;
+    }
+
+    // Doesn't move to the next instruction until the next keyboard input
+    // This has the effect of running the same instruction repeatedly
+    if (keyPressed) {
+        _pc += 2;
     }
 }
 
@@ -563,6 +581,7 @@ void ch8::Chip8::op_Fx15()
 {
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     _delayTimer = _registers[Vx];
+    _pc += 2;
 }
 
 // Set sound timer = Vx
@@ -570,6 +589,7 @@ void ch8::Chip8::op_Fx18()
 {
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     _soundTimer = _registers[Vx];
+    _pc += 2;
 }
 
 // Set I = I + Vx
@@ -577,15 +597,16 @@ void ch8::Chip8::op_Fx1E()
 {
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
     _index += _registers[Vx];
+    _pc += 2;
 }
 
 // Set I = location of sprite for digit Vx
 void ch8::Chip8::op_Fx29()
 {
     const uint8_t Vx = (_opcode & 0x0F00u) >> 8u;
-    const uint8_t digit = _registers[Vx];
     // Font is 5 bytes wide
-    _index = FONTSET_START_ADDRESS + (5 * digit);
+    _index = FONTSET_START_ADDRESS + (5 * _registers[Vx]);
+    _pc += 2;
 }
 
 // Store BCD representation of Vx in memory locations I, I+1, and I+2
@@ -603,6 +624,8 @@ void ch8::Chip8::op_Fx33()
 
     // Hundreds-place
     _memory[_index] = value % 10;
+
+    _pc += 2;
 }
 
 // Store registers V0 through Vx in memory starting at location I
@@ -612,6 +635,7 @@ void ch8::Chip8::op_Fx55()
     for (uint8_t i = 0u; i <= Vx; ++i) {
         _memory[_index + i] = _registers[i];
     }
+    _pc += 2;
 }
 
 // Read registers V0 through Vx from memory starting at location I
@@ -621,6 +645,7 @@ void ch8::Chip8::op_Fx65()
     for (uint8_t i = 0u; i <= Vx; ++i) {
         _registers[i] = _memory[_index + i];
     }
+    _pc += 2;
 }
 
 #pragma endregion

@@ -107,7 +107,7 @@ void Window::processInput(std::array<uint8_t, 16> &keys, bool &quit)
             case SDL_KEYUP: {
                 if (const auto keyIndex = sdlKeyMapper(sdlEvent.key.keysym.sym);
                         keyIndex != Chip8::Key_INVALID) {
-                    keys[keyIndex] = 0;
+                    keys[keyIndex] = 0u;
                 }
                 break;
             }

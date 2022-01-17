@@ -1,11 +1,10 @@
 #include "chip8_emulator/Chip8.h"
 #include "chip8_emulator/Window.hpp"
-#include "chip8_emulator/rom_handler.h"
+#include "chip8_emulator/rom_main_loop.h"
 
 #include <iostream>
 #include <format>
 #include <SDL.h>
-
 
 // Return -1 if invalid value
 int parsePositiveInteger(std::string_view arg)
@@ -66,7 +65,8 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
     ch8::Window window(videoScale, frequency);
-    ch8::runMainLoop(chip8Emulator, window);
+    // Main loop
+    ch8::executeCurrentROM(chip8Emulator, window);
 
     SDL_Quit();
     return EXIT_SUCCESS;
