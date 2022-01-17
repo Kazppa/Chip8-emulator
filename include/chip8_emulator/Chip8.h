@@ -23,26 +23,18 @@ namespace ch8
             Key_1 = 1,
             Key_2 = 2,
             Key_3 = 3,
+            Key_a = 4,
+            Key_z = 5,
             Key_e = 6,
+            Key_q = 7,
             Key_s = 8,
             Key_d = 9,
+            Key_w = 10,
             Key_c = 11,
             Key_4 = 12,
             Key_r = 13,
             Key_f = 14,
             Key_v = 15,
-#ifdef QWERTY
-            Key_q = 7,
-            Key_a = 4,
-            Key_w = 10,
-            Key_z = 5,
-#else
-        // AZERTY bindings
-            Key_q = 4,
-            Key_a = 7,
-            Key_w = 5,
-            Key_z = 10,
-#endif
         };
 
         Chip8();
@@ -54,7 +46,8 @@ namespace ch8
         // Return the current opcode as string (Hexadecimal format)
         [[nodiscard]] std::string opcodeToString() const;
 
-        bool loadROM(std::string_view filePath);
+        // Load the binary file in memory
+        bool loadROM(const std::wstring& filePath);
 
         // Reset to default state (clear screen, memory, keypad, ...)
         void resetState() noexcept;
@@ -124,7 +117,7 @@ namespace ch8
         std::default_random_engine _randomEngine;
         std::uniform_int_distribution<uint16_t> _randByte;          // Generate random value between 0 and 255
 
-        bool _renderFlag = false;                                   // Indicate when the UI need to be rendered (when modification happened to _video)
+        bool _renderFlag = true;                                    // Indicate when the UI need to be rendered (when modification happened to _video)
     };
 }
 

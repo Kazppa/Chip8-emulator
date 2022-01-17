@@ -12,7 +12,7 @@ namespace
     constexpr int VideoPitch = sizeof(decltype(ch8::Chip8::_video)::value_type) * ch8::Chip8::VIDEO_WIDTH;
 }
 
-Window::Window(int videoScale, int frequency) : _frequency(frequency)
+Window::Window(int videoScale)
 {
     _window = SDL_CreateWindow("CHIP-8 Emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                Chip8::VIDEO_WIDTH * videoScale, Chip8::VIDEO_HEIGHT * videoScale,

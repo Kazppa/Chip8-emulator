@@ -16,7 +16,7 @@ namespace ch8
         static constexpr auto DefaultScaleRatio = 20;
         static constexpr auto DefaultFrequency = 500; // in Hertz
 
-        explicit Window(int videoScale = DefaultScaleRatio, int frequency = DefaultFrequency);
+        explicit Window(int videoScale = DefaultScaleRatio);
 
         ~Window();
 
@@ -27,7 +27,6 @@ namespace ch8
         SDL_Window *_window;
         SDL_Renderer *_renderer;
         SDL_Texture *_texture;
-        int _frequency;
     };
 }
 

@@ -31,13 +31,13 @@ add_custom_command(TARGET ${CHIP8_EXE} POST_BUILD
         "${SDL2_DLL_PATH}"
         "$<TARGET_FILE_DIR:${CHIP8_EXE}>")
 
-# Compile options
+# Compiler options
 if (MSVC)
     target_compile_options(${CHIP8_EXE} PRIVATE
-            /W4 "$<$<CONFIG:RELEASE>:/O2 /WX>")
+            /W4 "$<$<CONFIG:RELEASE>:/O2;/WX>")
 else ()
     target_compile_options(${CHIP8_EXE} PRIVATE
-            "-Wall" "-Wextra" "-Werror" "$<$<CONFIG:Release>:-03>")
+            "-Wall" "-Wextra" "-Wpedantic" "$<$<CONFIG:Release>:-03;-Werror>")
 endif ()
 
 # DEBUG macro

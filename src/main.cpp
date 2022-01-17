@@ -1,73 +1,80 @@
 #include "chip8_emulator/Chip8.h"
 #include "chip8_emulator/Window.hpp"
-#include "chip8_emulator/rom_main_loop.h"
+#include "chip8_emulator/os_features.h"
 
 #include <iostream>
 #include <format>
+#include <thread>
 #include <SDL.h>
 
-// Return -1 if invalid value
-int parsePositiveInteger(std::string_view arg)
-{
-    int output;
-    const auto result = std::from_chars(arg.data(), arg.data() + arg.size(), output);
 
-    if (result.ec != std::errc{}) {
-        // Conversion failed
-        output = -1;
+// Execute the current ROM loaded in the chip8 emulator
+void executeROM(ch8::Chip8 &chip8, ch8::Window &window);
 
-        if (result.ec == std::errc::invalid_argument) {
-            std::cerr << std::format("non integer argument \"{}\"", arg);
-        }
-        else if (result.ec == std::errc::result_out_of_range) {
-            std::cerr << std::format("value out of range for argument \"{}\"", arg);
-        }
-        else {
-            // Any other errors
-            std::cerr << std::format("invalid value for argument \"{}\"", arg);
-        }
-    }
-    else {
-        if (output < 0) {
-            output = -1;
-            std::cerr << std::format("invalid negative value \"{}\"", arg);
-        }
-    }
-    return output;
-}
 
 int main(int argc, char *argv[])
 {
+    // Parsing arguments
+    int videoScale;
+    if (argc > 3) {
+        std::cerr << std::format("Usage: {} <Screen resolution upscale ratio (Optional Default={})>",
+                                 argv[0], ch8::Window::DefaultScaleRatio);
+        return EXIT_FAILURE;
+    }
+    try {
+        videoScale = argc > 2 ? std::stoi(argv[1]) : ch8::Window::DefaultScaleRatio;
+    }
+    catch (...) {
+        std::cerr << "invalid integer value for screen resolution upscale";
+        return EXIT_FAILURE;
+    }
+
     // Initialize SDL 2
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         SDL_Log("Failed to initialize SDL : %s", SDL_GetError());
         return EXIT_FAILURE;
     }
 
-    // Parsing arguments
-    if (argc < 2 || argc > 4) {
-        std::cerr << std::format("Usage: {} <ROM file path>"
-                                 " <Screen resolution upscale ratio (Optional Default={})>"
-                                 " <Interpreter frequency in Hertz (Optional Default={} Hz)>",
-                                 argv[0], ch8::Window::DefaultScaleRatio, ch8::Window::DefaultFrequency);
-        return EXIT_FAILURE;
-    }
-    const std::string_view romFilePath(argv[1]);
-    const auto videoScale = argc > 2 ? parsePositiveInteger(argv[2]) : ch8::Window::DefaultScaleRatio;
-    const auto frequency = argc > 3 ? parsePositiveInteger(argv[3]) : ch8::Window::DefaultFrequency;
-    if (videoScale == -1 || frequency == -1) {
-        return EXIT_FAILURE;
+    // Ask user the path to the ROM file
+    const auto romFilePath = ch8::os::getFilePathDialog();
+    if (romFilePath.empty()) {
+        // User closed file dialog
+        return EXIT_SUCCESS;
     }
 
-    // Load and execute the ROM into the emulator
+    // Load the ROM binary file in memory
     ch8::Chip8 chip8Emulator;
     if (!chip8Emulator.loadROM(romFilePath)) {
         return EXIT_FAILURE;
     }
-    ch8::Window window(videoScale, frequency);
+    ch8::Window window(videoScale);
     // Main loop
-    ch8::executeCurrentROM(chip8Emulator, window);
+    executeROM(chip8Emulator, window);
 
     SDL_Quit();
     return EXIT_SUCCESS;
+}
+
+
+void executeROM(ch8::Chip8 &chip8, ch8::Window &window)
+{
+    using namespace std::chrono_literals;
+
+    bool quit = false;
+    do {
+        // Emulate a single CPU cycle
+        chip8.execCpuCycle();
+
+        // Get Keyboard inputs, quit is true when the escape key is pressed
+        window.processInput(chip8._keypad, quit);
+
+        if (chip8.renderRequired()) {
+            // Render a new image
+            window.render(chip8._video.data());
+            chip8.setRenderRequired(false);
+        }
+
+        // Emulate a constant CPU frequency (~ 500 Hertz)
+        std::this_thread::sleep_for(1500us);
+    } while (!quit);
 }

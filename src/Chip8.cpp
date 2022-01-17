@@ -15,7 +15,7 @@ namespace ch8
 
     constexpr unsigned int FONTSET_START_ADDRESS = 0x50;
 
-    constexpr auto FONTSET = ch8::make_array<uint8_t>(
+    constexpr auto FONTSET = utils::make_array<uint8_t>(
             0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
             0x20, 0x60, 0x20, 0x20, 0x70, // 1
             0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -53,18 +53,18 @@ ch8::Chip8::Chip8() :
     std::copy(FONTSET.cbegin(), FONTSET.cend(), _memory.begin() + FONTSET_START_ADDRESS);
 }
 
-bool ch8::Chip8::loadROM(std::string_view filePath)
+bool ch8::Chip8::loadROM(const std::wstring& filePath)
 {
     // Open the file as a stream of binary and move the file pointer to the end
-    std::ifstream file(filePath.data(), std::ios::binary | std::ios::ate);
+    std::ifstream file(filePath, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
-        std::cerr << "Failed to read ROM file at location \"" << filePath << '"';
+        std::wcerr << L"Failed to read ROM file at location \"" << filePath << '"';
         return false;
     }
     // Get file's size and allocate a buffer to hold the contents
     const std::streamsize buffer_size = file.tellg();
     if (buffer_size == 0 || buffer_size > std::numeric_limits<unsigned int>::max()) {
-        std::cerr << "Invalid size (or file is too big) at location \"" << filePath << '"';
+        std::wcerr << L"Invalid size (or file is too big) at location \"" << filePath << '"';
         return false;
     }
 
